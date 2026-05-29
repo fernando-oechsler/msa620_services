@@ -1,0 +1,13 @@
+[Unit]
+Description=MSA620 HMI Application
+After=default.target
+
+[Service]
+Environment=QT_QPA_PLATFORM=wayland
+WorkingDirectory=/opt/msa620
+ExecStart=cage -- /opt/msa620/venv/bin/python /opt/msa620/mvc_app.py
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=default.target
