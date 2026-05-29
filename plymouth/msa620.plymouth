@@ -1,0 +1,8 @@
+[Plymouth Theme]
+Name=MSA620
+Description=MSA620 Splash Screen
+ModuleName=script
+
+[script]
+ImageDir=/usr/share/plymouth/themes/msa620
+ScriptFile=/usr/share/plymouth/themes/msa620/msa620.script
