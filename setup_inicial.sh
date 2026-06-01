@@ -1,8 +1,8 @@
 #!/bin/bash
 # ============================================================================
 #  Setup Inicial MSA620 - Raspberry Pi 4
-#  Roda UMA VEZ num Pi OS Lite recem-instalado
-#  Configura o sistema, clona o repo de configuracoes e aplica plymouth+service
+#  Roda UMA VEZ num Pi OS Lite recem-instalado, de DENTRO da pasta ja clonada
+#  Configura o sistema, compila o driver do teclado e aplica plymouth+service
 #  NAO mexe na aplicacao Python (isso vai por pendrive depois)
 # ============================================================================
 
@@ -10,11 +10,11 @@ set -e
 set -u
 
 # ----------- CONFIGURACOES --------------------------------------------------
-REPO_URL="https://github.com/fernando-oechsler/msa620.git"
-SERVICES_DIR="/opt/msa620_services"
 USERNAME="msa620"
 SCREEN_WIDTH=800
 SCREEN_HEIGHT=480
+# Diretorio do proprio repositorio (onde esse script esta) - ja clonado manualmente
+SERVICES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # ----------------------------------------------------------------------------
 
 GREEN='\033[0;32m'
@@ -49,6 +49,8 @@ sudo apt upgrade -y
 log "Instalando pacotes..."
 sudo apt install -y \
     git \
+    build-essential \
+    raspberrypi-kernel-headers \
     python3-pip \
     python3-venv \
     cage \
@@ -131,26 +133,20 @@ EOF
 sudo systemctl set-default multi-user.target
 
 # ============================================================================
-# 7. Clonar o repositorio de configuracoes
+# 7. Compilar e instalar o driver do teclado (modulo de kernel + overlay)
 # ============================================================================
-log "Clonando configuracoes em $SERVICES_DIR..."
-sudo mkdir -p "$SERVICES_DIR"
-sudo chown "$USERNAME:$USERNAME" "$SERVICES_DIR"
-
-if [ -d "$SERVICES_DIR/.git" ]; then
-    warn "Repositorio ja existe, fazendo pull..."
+if [ -d "$SERVICES_DIR/keyboard" ]; then
+    log "Compilando e instalando driver do teclado MSA620..."
+    cd "$SERVICES_DIR/keyboard"
+    sudo make
+    sudo make install
     cd "$SERVICES_DIR"
-    git pull
 else
-    if [ "$(ls -A $SERVICES_DIR 2>/dev/null)" ]; then
-        warn "Diretorio nao vazio, limpando..."
-        sudo rm -rf "$SERVICES_DIR"/* "$SERVICES_DIR"/.[!.]* 2>/dev/null || true
-    fi
-    git clone "$REPO_URL" "$SERVICES_DIR"
+    warn "Pasta keyboard/ nao encontrada, driver nao instalado."
 fi
 
 # ============================================================================
-# 8. Executar o apply.sh do repositorio
+# 8. Executar o apply.sh (plymouth + systemd service)
 # ============================================================================
 if [ -f "$SERVICES_DIR/apply.sh" ]; then
     log "Executando apply.sh..."
@@ -165,10 +161,10 @@ echo -e "${GREEN}============================================================${N
 echo -e "${GREEN}  Setup do sistema concluido!${NC}"
 echo -e "${GREEN}============================================================${NC}"
 echo ""
-echo "Sistema preparado. Plymouth e service ja aplicados."
+echo "Sistema preparado. Driver do teclado, Plymouth e service ja aplicados."
 echo ""
 echo "Proximos passos (manuais):"
-echo "  - Copiar codigo Python para /opt/msa620/ via pendrive"
+echo "  - Copiar codigo Python para /opt/msa620_app/ via pendrive"
 echo "  - Criar venv e instalar dependencias"
 echo "  - sudo reboot"
 echo ""
