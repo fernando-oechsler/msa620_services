@@ -69,7 +69,7 @@ sudo apt install -y \
 # 2. Grupos e permissoes do usuario
 # ============================================================================
 log "Adicionando $USERNAME aos grupos..."
-sudo usermod -aG video,input,tty,render "$USERNAME" || true
+sudo usermod -aG video,input,tty,render,gpio "$USERNAME" || true
 if getent group seat &>/dev/null; then
     sudo usermod -aG seat "$USERNAME"
 fi
