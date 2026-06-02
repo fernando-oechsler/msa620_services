@@ -48,9 +48,6 @@ sudo apt upgrade -y
 
 log "Instalando pacotes..."
 sudo apt install -y \
-    git \
-    build-essential \
-    raspberrypi-kernel-headers \
     python3-pip \
     python3-venv \
     cage \
