@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<!--
+  labwc - configuracao MSA620 (totem / quiosque)
+
+  Substitui o cage. Diferenca chave: o cage forcava TODA janela a tela cheia,
+  o que estourava o numpad. O labwc respeita o tamanho das janelas, entao:
+    - a janela principal entra em fullscreen (o proprio app pede isso);
+    - o numpad e outros dialogos flutuam no tamanho definido pelo app.
+
+  - core/decoration = client : labwc nao desenha barra de titulo (visual limpo)
+  - core/gap = 0             : sem espaco entre a janela e a borda da tela
+  - sem sombras / sem decoracao em janela maximizada
+-->
+<labwc_config>
+  <core>
+    <gap>0</gap>
+    <decoration>client</decoration>
+  </core>
+  <theme>
+    <dropShadows>no</dropShadows>
+    <maximizedDecoration>none</maximizedDecoration>
+  </theme>
+
+  <!--
+    Se a janela PRINCIPAL nao abrir sozinha em tela cheia, adicionamos uma regra
+    aqui. Atencao: o numpad compartilha o mesmo app_id da principal, entao a regra
+    precisa usar matchOnce (so a 1a janela) ou casar pelo 'title'. Me avise que eu
+    monto a regra com o identificador certo.
+  -->
+</labwc_config>
