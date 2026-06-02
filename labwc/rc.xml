@@ -21,6 +21,13 @@
     <maximizedDecoration>none</maximizedDecoration>
   </theme>
 
+  <!-- Cursor escondido: a acao HideCursor e disparada no boot pelo autostart (wtype) -->
+  <keyboard>
+    <keybind key="A-W-h">
+      <action name="HideCursor"/>
+    </keybind>
+  </keyboard>
+
   <!--
     Se a janela PRINCIPAL nao abrir sozinha em tela cheia, adicionamos uma regra
     aqui. Atencao: o numpad compartilha o mesmo app_id da principal, entao a regra
