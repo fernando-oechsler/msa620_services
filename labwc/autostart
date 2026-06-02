@@ -1,0 +1,10 @@
+#!/bin/sh
+# autostart do labwc - MSA620
+#
+# A simples EXISTENCIA deste arquivo faz o labwc IGNORAR o autostart do sistema
+# (/etc/xdg/labwc/autostart), que no Pi OS sobe painel/wallpaper/desktop.
+# Resultado: fica so o app (lancado pelo 'labwc -S' do service), sem chrome de desktop.
+#
+# Esconde o cursor no boot: dispara a keybind HideCursor (definida no rc.xml) via wtype.
+# Em touchscreen sem mouse o cursor fica escondido o tempo todo, igual o cage.
+(sleep 1 && wtype -M alt -M logo -P h) >/dev/null 2>&1 &
