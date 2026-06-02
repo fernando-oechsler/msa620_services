@@ -2,7 +2,7 @@
 # ============================================================================
 #  Setup Inicial MSA620 - Raspberry Pi 4
 #  Roda UMA VEZ num Pi OS Lite recem-instalado, de DENTRO da pasta ja clonada
-#  Configura o sistema, compila o driver do teclado e aplica plymouth+service
+#  Configura o sistema, compila o driver e aplica plymouth + labwc + service
 #  NAO mexe na aplicacao Python (isso vai por pendrive depois)
 # ============================================================================
 
@@ -11,6 +11,8 @@ set -u
 
 # ----------- CONFIGURACOES --------------------------------------------------
 USERNAME="msa620"
+SERVICE_NAME="msa620"
+PLYMOUTH_THEME="msa620"
 SCREEN_WIDTH=800
 SCREEN_HEIGHT=480
 # Diretorio do proprio repositorio (onde esse script esta) - ja clonado manualmente
@@ -47,10 +49,14 @@ sudo apt update
 sudo apt upgrade -y
 
 log "Instalando pacotes..."
+# Obs: git ja vem (foi usado pra clonar) e o build do driver (secao 7) assume
+# gcc/make + headers do kernel ja presentes na imagem. Se trocar pra uma imagem
+# que nao tenha, re-adicione aqui: build-essential e linux-headers-$(uname -r).
 sudo apt install -y \
     python3-pip \
     python3-venv \
-    cage \
+    labwc \
+    wtype \
     seatd \
     weston \
     xwayland \
@@ -143,14 +149,46 @@ else
 fi
 
 # ============================================================================
-# 8. Executar o apply.sh (plymouth + systemd service)
+# 8. Plymouth, config do labwc e systemd service (antes era o apply.sh)
 # ============================================================================
-if [ -f "$SERVICES_DIR/apply.sh" ]; then
-    log "Executando apply.sh..."
-    chmod +x "$SERVICES_DIR/apply.sh"
-    bash "$SERVICES_DIR/apply.sh"
+
+# --- Tema Plymouth ---
+if [ -d "$SERVICES_DIR/plymouth" ]; then
+    log "Aplicando tema Plymouth '$PLYMOUTH_THEME'..."
+    THEME_DIR="/usr/share/plymouth/themes/$PLYMOUTH_THEME"
+    [ -d "$THEME_DIR" ] && sudo rm -f "$THEME_DIR"/*.png
+    sudo mkdir -p "$THEME_DIR"
+    sudo cp "$SERVICES_DIR/plymouth/$PLYMOUTH_THEME.plymouth" "$THEME_DIR/"
+    sudo cp "$SERVICES_DIR/plymouth/$PLYMOUTH_THEME.script" "$THEME_DIR/"
+    sudo cp "$SERVICES_DIR/plymouth/frames/"*.png "$THEME_DIR/"
+    sudo plymouth-set-default-theme "$PLYMOUTH_THEME"
+    log "Atualizando initramfs (pode demorar)..."
+    sudo update-initramfs -u
 else
-    warn "apply.sh nao encontrado no repositorio."
+    warn "Pasta plymouth/ nao encontrada"
+fi
+
+# --- Config do labwc (compositor) ---
+if [ -d "$SERVICES_DIR/labwc" ]; then
+    log "Instalando config do labwc..."
+    LABWC_DIR="/home/$USERNAME/.config/labwc"
+    mkdir -p "$LABWC_DIR"
+    cp "$SERVICES_DIR/labwc/"* "$LABWC_DIR/"
+else
+    warn "Pasta labwc/ nao encontrada"
+fi
+
+# --- systemd user service ---
+if [ -f "$SERVICES_DIR/systemd/$SERVICE_NAME.service" ]; then
+    log "Instalando $SERVICE_NAME.service..."
+    USER_SYSTEMD_DIR="/home/$USERNAME/.config/systemd/user"
+    mkdir -p "$USER_SYSTEMD_DIR"
+    cp "$SERVICES_DIR/systemd/$SERVICE_NAME.service" "$USER_SYSTEMD_DIR/"
+    systemctl --user daemon-reload
+    systemctl --user enable "$SERVICE_NAME.service"
+    log "Servico habilitado"
+else
+    warn "systemd/$SERVICE_NAME.service nao encontrado"
 fi
 
 echo ""
@@ -158,13 +196,10 @@ echo -e "${GREEN}============================================================${N
 echo -e "${GREEN}  Setup do sistema concluido!${NC}"
 echo -e "${GREEN}============================================================${NC}"
 echo ""
-echo "Sistema preparado. Driver do teclado, Plymouth e service ja aplicados."
+echo "Sistema preparado. Driver, Plymouth, labwc e service (labwc) aplicados."
 echo ""
 echo "Proximos passos (manuais):"
 echo "  - Copiar codigo Python para /opt/msa620_app/ via pendrive"
 echo "  - Criar venv e instalar dependencias"
 echo "  - sudo reboot"
-echo ""
-echo "Para atualizar configuracoes futuras:"
-echo "  cd $SERVICES_DIR && git pull && ./apply.sh"
 echo ""
