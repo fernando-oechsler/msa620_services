@@ -5,7 +5,7 @@ After=default.target
 [Service]
 Environment=QT_QPA_PLATFORM=wayland
 WorkingDirectory=/opt/msa620_app
-ExecStart=cage -- /opt/msa620_app/venv/bin/python /opt/msa620_app/mvc_app.py
+ExecStart=labwc -S "/opt/msa620_app/venv/bin/python /opt/msa620_app/mvc_app.py"
 Restart=always
 RestartSec=3
 
