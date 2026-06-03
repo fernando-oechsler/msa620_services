@@ -13,6 +13,7 @@ set -u
 USERNAME="msa620"
 SERVICE_NAME="msa620"
 PLYMOUTH_THEME="msa620"
+PLYMOUTH_SET="intro_2"   # conjunto de frames ativo (intro_1 = animacao antiga)
 SCREEN_WIDTH=800
 SCREEN_HEIGHT=480
 # Diretorio do proprio repositorio (onde esse script esta) - ja clonado manualmente
@@ -62,7 +63,6 @@ sudo apt install -y \
     xwayland \
     plymouth \
     plymouth-themes \
-    ffmpeg \
     libgles2 \
     libgl1 \
     libegl1 \
@@ -119,6 +119,9 @@ hdmi_group=2
 hdmi_mode=87
 hdmi_cvt=$SCREEN_WIDTH $SCREEN_HEIGHT 60 6 0 0 0
 hdmi_force_hotplug=1
+
+# Sem a tela rainbow do firmware durante o POST
+disable_splash=1
 EOF
 fi
 
@@ -160,7 +163,7 @@ if [ -d "$SERVICES_DIR/plymouth" ]; then
     sudo mkdir -p "$THEME_DIR"
     sudo cp "$SERVICES_DIR/plymouth/$PLYMOUTH_THEME.plymouth" "$THEME_DIR/"
     sudo cp "$SERVICES_DIR/plymouth/$PLYMOUTH_THEME.script" "$THEME_DIR/"
-    sudo cp "$SERVICES_DIR/plymouth/frames/"*.png "$THEME_DIR/"
+    sudo cp "$SERVICES_DIR/plymouth/$PLYMOUTH_SET/"*.png "$THEME_DIR/"
     sudo plymouth-set-default-theme "$PLYMOUTH_THEME"
     log "Atualizando initramfs (pode demorar)..."
     sudo update-initramfs -u

@@ -1,26 +1,51 @@
+# ============================================================================
+#  MSA620 - Plymouth splash  (conjunto ativo: intro_2)
+#
+#  boot            -> intro (toca 1x) e depois loading em loop ate o boot acabar
+#  shutdown/reboot -> imagem estatica (splash.png)   [GetMode != "boot"]
+#
+#  Frames vem de plymouth/intro_2/, copiados "flat" pro tema pelo setup_inicial.sh
+#  (PLYMOUTH_SET=intro_2). Para voltar a animacao antiga (intro_1): restaure este
+#  script para a versao de loop unico (frame-N.png) e troque PLYMOUTH_SET=intro_1.
+# ============================================================================
+
 Window.SetBackgroundTopColor(0, 0, 0);
 Window.SetBackgroundBottomColor(0, 0, 0);
 
 screen.w = Window.GetWidth();
 screen.h = Window.GetHeight();
-screen.half.w = Window.GetWidth() / 2;
-screen.half.h = Window.GetHeight() / 2;
-
-boot = 114;
-
-for (i = 0; i < boot; i++) {
-    frames[i] = Image("frame-" + i + ".png");
-}
 
 sprite = Sprite();
-sprite.SetX(screen.half.w - frames[0].GetWidth() / 2);
-sprite.SetY(screen.half.h - frames[0].GetHeight() / 2);
 
-progress = 0;
-
-fun refresh_callback() {
-    sprite.SetImage(frames[progress % boot]);
-    progress++;
+fun center(img) {
+    sprite.SetImage(img);
+    sprite.SetX(screen.w / 2 - img.GetWidth()  / 2);
+    sprite.SetY(screen.h / 2 - img.GetHeight() / 2);
 }
 
-Plymouth.SetRefreshFunction(refresh_callback);
+mode = Plymouth.GetMode();
+
+if (mode == "boot") {
+    intro_count   = 23;   # intro-0.png   .. intro-22.png
+    loading_count = 65;   # loading-0.png .. loading-64.png
+
+    for (i = 0; i < intro_count;   i++) intro[i]   = Image("intro-" + i + ".png");
+    for (i = 0; i < loading_count; i++) loading[i] = Image("loading-" + i + ".png");
+
+    progress = 0;
+
+    fun refresh_callback() {
+        if (progress < intro_count)
+            img = intro[progress];
+        else
+            img = loading[(progress - intro_count) % loading_count];
+
+        center(img);
+        progress++;
+    }
+
+    Plymouth.SetRefreshFunction(refresh_callback);
+} else {
+    # shutdown / reboot / suspend / resume -> imagem estatica
+    center(Image("splash.png"));
+}
