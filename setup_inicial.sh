@@ -126,15 +126,24 @@ EOF
 fi
 
 # ============================================================================
-# 6. Autologin no console
+# 6. Console: autologin (quieto) + tty1 limpo no handoff Plymouth->labwc
 # ============================================================================
-log "Configurando autologin..."
+log "Configurando console (autologin quieto + tty1 limpo)..."
 sudo mkdir -p /etc/systemd/system/getty@tty1.service.d/
 sudo tee /etc/systemd/system/getty@tty1.service.d/autologin.conf >/dev/null <<EOF
 [Service]
 ExecStart=
-ExecStart=-/sbin/agetty --autologin $USERNAME --noclear %I \$TERM
+ExecStart=-/sbin/agetty --autologin $USERNAME --noissue --noclear %I \$TERM
 EOF
+
+# Sem MOTD / "Last login" no login automatico
+touch "/home/$USERNAME/.hushlogin"
+
+# O labwc sobe via linger, entao o getty do tty1 e dispensavel. Mascarar tira o
+# "(automatic login)" + o prompt que apareciam no tty1 entre o Plymouth e o labwc.
+# (Se num flash novo o labwc nao subir, desmascare:
+#  sudo systemctl unmask getty@tty1.service)
+sudo systemctl mask getty@tty1.service
 
 sudo systemctl set-default multi-user.target
 
