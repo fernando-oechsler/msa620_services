@@ -6,6 +6,7 @@
 #include <linux/kthread.h>
 #include <linux/input.h>
 #include <linux/delay.h>
+#include <linux/reboot.h>
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Fernando Oechsler");
@@ -20,6 +21,7 @@ MODULE_VERSION("1.0");
 #define SCAN_INTERVAL_US   5000   /* intervalo entre varreduras (~5 ms)           */
 #define COL_SETTLE_US      10     /* estabilizacao da linha apos ativar a coluna  */
 #define LED_BLINK_MS       500    /* periodo do pisca do LED quando ocioso        */
+#define COMBO_HOLD_MS      3000   /* F5+ESC+0 segurados por 3s -> reboot          */
 /* Debounce efetivo ~= DEBOUNCE_SAMPLES * SCAN_INTERVAL_US ~= 20 ms */
 
 static struct gpio_descs *row_gpios;
@@ -58,6 +60,8 @@ static u8   debounce_cnt[NUM_ROWS][NUM_COLS];
 static int keyboard_thread_fn(void *data) {
     bool led_state = false;
     unsigned long led_jiffies = jiffies;
+    bool combo_held = false;          /* combo de reboot em andamento */
+    unsigned long combo_since = 0;    /* jiffies de quando o combo comecou */
 
     while (!kthread_should_stop()) {
         bool any_pressed = false;
@@ -103,6 +107,21 @@ static int keyboard_thread_fn(void *data) {
         /* Um unico sync por varredura, somente quando houve mudanca */
         if (changed)
             input_sync(input_dev);
+
+        /* Combo de manutencao: F5(0,0) + ESC(4,1) + '0'(5,3) por 3s -> reboot */
+        if (key_state[0][0] && key_state[4][1] && key_state[5][3]) {
+            if (!combo_held) {
+                combo_held = true;
+                combo_since = jiffies;
+            } else if (time_after(jiffies,
+                                  combo_since + msecs_to_jiffies(COMBO_HOLD_MS))) {
+                pr_info("msa620: combo F5+ESC+0 (3s) -> reboot\n");
+                combo_held = false;   /* nao repetir */
+                orderly_reboot();     /* reboot gracioso via userspace/systemd */
+            }
+        } else {
+            combo_held = false;
+        }
 
         /* LED: aceso fixo com tecla pressionada, piscando quando ocioso */
         if (any_pressed) {
